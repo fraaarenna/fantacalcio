@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <title>Fantacalcio Budget</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f4f4f9;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      font-size: 22px;
+      margin-bottom: 20px;
+    }
+    .card {
+      background: white;
+      padding: 20px;
+      margin: 10px auto;
+      border-radius: 15px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      max-width: 420px;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 14px;
+      margin: 8px 0;
+      font-size: 16px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    button {
+      background: #007aff;
+      color: white;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:active {
+      background: #0051a8;
+    }
+    .result {
+      margin-top: 15px;
+      font-weight: bold;
+      color: #007aff;
+      text-align: center;
+      font-size: 15px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background: #007aff;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <h1>⚽ Gestione Crediti Fantacalcio</h1>
+
+  <!-- Setup iniziale -->
+  <div class="card" id="setup">
+    <label>Numero massimo giocatori:</label>
+    <input type="number" id="maxGiocatori" min="1" placeholder="Es. 25">
+    <label>Crediti totali:</label>
+    <input type="number" id="creditiTotali" min="1" placeholder="Es. 500">
+    <button onclick="inizia()">Inizia</button>
+  </div>
+
+  <!-- Acquisti -->
+  <div class="card" id="acquisti" style="display:none;">
+    <label>Nome giocatore:</label>
+    <input type="text" id="nomeGiocatore" placeholder="Inserisci nome">
+
+    <label>Ruolo:</label>
+    <select id="ruolo">
+      <option value="Portiere">Portiere</option>
+      <option value="Difensore">Difensore</option>
+      <option value="Centrocampista">Centrocampista</option>
+      <option value="Attaccante">Attaccante</option>
+    </select>
+
+    <label>Prezzo giocatore:</label>
+    <input type="number" id="prezzo" min="1" placeholder="Es. 30">
+
+    <button onclick="acquista()">➕ Acquista</button>
+    <div class="result" id="output"></div>
+
+    <table id="tabellaGiocatori" style="display:none;">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Ruolo</th>
+          <th>Prezzo</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    let maxGiocatori = 0;
+    let creditiTotali = 0;
+    let giocatoriAcquistati = 0;
+    let creditiSpesi = 0;
+
+    function inizia() {
+      const maxField = document.getElementById("maxGiocatori");
+      const creditiField = document.getElementById("creditiTotali");
+
+      maxGiocatori = maxField.valueAsNumber;
+      creditiTotali = creditiField.valueAsNumber;
+
+      if (!maxGiocatori || !creditiTotali || maxGiocatori <= 0 || creditiTotali <= 0) {
+        alert("Inserisci valori validi!");
+        return;
+      }
+
+      document.getElementById("setup").style.display = "none";
+      document.getElementById("acquisti").style.display = "block";
+      aggiornaOutput("Puoi iniziare ad acquistare giocatori!");
+    }
+
+    function acquista() {
+      let nome = document.getElementById("nomeGiocatore").value.trim();
+      let ruolo = document.getElementById("ruolo").value;
+      let prezzo = document.getElementById("prezzo").valueAsNumber;
+
+      if (!nome) {
+        alert("Inserisci il nome del giocatore!");
+        return;
+      }
+
+      if (!prezzo || prezzo <= 0) {
+        alert("Inserisci un prezzo valido!");
+        return;
+      }
+
+      if (prezzo > creditiTotali - creditiSpesi) {
+        alert("Non hai abbastanza crediti!");
+        return;
+      }
+
+      giocatoriAcquistati++;
+      creditiSpesi += prezzo;
+
+      let creditiResidui = creditiTotali - creditiSpesi;
+      let giocatoriRestanti = maxGiocatori - giocatoriAcquistati;
+
+      // aggiorna tabella
+      document.getElementById("tabellaGiocatori").style.display = "table";
+      let tbody = document.querySelector("#tabellaGiocatori tbody");
+      let row = document.createElement("tr");
+      row.innerHTML = `<td>${nome}</td><td>${ruolo}</td><td>${prezzo}</td>`;
+      tbody.appendChild(row);
+
+      if (giocatoriRestanti > 0) {
+        let media = (creditiResidui / giocatoriRestanti).toFixed(2);
+        aggiornaOutput(
+          `✅ Acquistato <b>${nome}</b> (${ruolo}) per ${prezzo} crediti.<br>` +
+          `Ti restano <b>${creditiResidui}</b> crediti per <b>${giocatoriRestanti}</b> giocatori.<br>` +
+          `👉 Media per giocatore: <b>${media}</b>`
+        );
+      } else {
+        aggiornaOutput(
+          `🎉 Rosa completa! Hai speso ${creditiSpesi} crediti, te ne restano ${creditiResidui}.`
+        );
+      }
+
+      // reset campi input
+      document.getElementById("nomeGiocatore").value = "";
+      document.getElementById("prezzo").value = "";
+      document.getElementById("ruolo").selectedIndex = 0;
+    }
+
+    function aggiornaOutput(msg) {
+      document.getElementById("output").innerHTML = msg;
+    }
+  </script>
+</body>
+</html>
+
+
+
